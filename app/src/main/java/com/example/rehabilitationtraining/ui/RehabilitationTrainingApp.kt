@@ -319,38 +319,39 @@ private fun DateSelector(
     selectedDateEpochDay: Long,
     onDateSelected: (Long) -> Unit,
 ) {
+    val todayEpochDay = LocalDate.now().toEpochDay()
     Text("日期：${formatDate(selectedDateEpochDay)}", style = MaterialTheme.typography.bodyLarge)
     Spacer(Modifier.height(8.dp))
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Button(
-            onClick = { onDateSelected(0) },
-            modifier = Modifier.weight(1f).heightIn(min = 52.dp),
-        ) {
-            Text(
-                text = "今天",
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center,
-            )
-        }
-        OutlinedButton(
-            onClick = { onDateSelected(-1) },
-            modifier = Modifier.weight(1f).heightIn(min = 52.dp),
-        ) {
-            Text(
-                text = "昨天",
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center,
-            )
-        }
-        OutlinedButton(
-            onClick = { onDateSelected(-2) },
-            modifier = Modifier.weight(1f).heightIn(min = 52.dp),
-        ) {
-            Text(
-                text = "前天",
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center,
-            )
+        listOf(
+            0L to "今天",
+            -1L to "昨天",
+            -2L to "前天"
+        ).forEach { (offset, label) ->
+            val isSelected = selectedDateEpochDay == todayEpochDay + offset
+            if (isSelected) {
+                Button(
+                    onClick = { onDateSelected(offset) },
+                    modifier = Modifier.weight(1f).heightIn(min = 52.dp),
+                ) {
+                    Text(
+                        text = label,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            } else {
+                OutlinedButton(
+                    onClick = { onDateSelected(offset) },
+                    modifier = Modifier.weight(1f).heightIn(min = 52.dp),
+                ) {
+                    Text(
+                        text = label,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            }
         }
     }
 }
