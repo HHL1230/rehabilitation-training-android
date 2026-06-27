@@ -13,10 +13,11 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.example.rehabilitationtraining.MainActivity
 import com.example.rehabilitationtraining.R
+import com.example.rehabilitationtraining.data.TrainingType
 
 object NotificationHelper {
     private const val CHANNEL_ID = "training_reminders"
-    private const val NOTIFICATION_ID = 1001
+    private const val NOTIFICATION_ID_BASE = 1001
 
     fun ensureChannel(context: Context) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
@@ -39,7 +40,7 @@ object NotificationHelper {
                 Manifest.permission.POST_NOTIFICATIONS,
             ) == PackageManager.PERMISSION_GRANTED
 
-    fun showTrainingReminder(context: Context) {
+    fun showTrainingReminder(context: Context, type: TrainingType) {
         ensureChannel(context)
         if (!canPostNotifications(context)) return
 
@@ -52,10 +53,10 @@ object NotificationHelper {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
-        val message = context.getString(R.string.training_reminder_message)
+        val message = "要做「${type.displayName}」訓練囉，要有耐心，一定會進步，恢復行動自如，加油！"
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification_small)
-            .setContentTitle(context.getString(R.string.training_reminder_title))
+            .setContentTitle("${type.displayName}提醒")
             .setContentText(message)
             .setStyle(NotificationCompat.BigTextStyle().bigText(message))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
@@ -63,6 +64,6 @@ object NotificationHelper {
             .setContentIntent(pendingIntent)
             .build()
 
-        NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, notification)
+        NotificationManagerCompat.from(context).notify(NOTIFICATION_ID_BASE + type.ordinal, notification)
     }
 }

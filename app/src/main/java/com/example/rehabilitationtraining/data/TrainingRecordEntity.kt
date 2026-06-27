@@ -15,6 +15,7 @@ data class TrainingRecordEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val dateEpochDay: Long,
     val type: TrainingType,
+    val recordedTimeMinutes: Int? = null,
     val durationMinutes: Int? = null,
     val sets: Int? = null,
     val reps: Int? = null,
@@ -23,4 +24,3 @@ data class TrainingRecordEntity(
     val notes: String? = null,
     val createdAtMillis: Long = System.currentTimeMillis(),
 )
-

@@ -8,6 +8,7 @@ data class TrainingValidationError(val message: String)
 data class TrainingRecordDraft(
     val dateEpochDay: Long,
     val type: TrainingType,
+    val recordedTimeMinutes: Int? = null,
     val durationMinutes: Int? = null,
     val sets: Int? = null,
     val reps: Int? = null,
@@ -17,6 +18,10 @@ data class TrainingRecordDraft(
 )
 
 fun TrainingRecordDraft.validate(): List<TrainingValidationError> = buildList {
+    if (recordedTimeMinutes == null || recordedTimeMinutes !in 0..1439) {
+        add(TrainingValidationError("請輸入有效的紀錄時間"))
+    }
+
     when (type) {
         TrainingType.BAND_LEG_CURL -> {
             requirePositive(durationMinutes, "請輸入彈力帶彎腿的訓練時間")
@@ -56,6 +61,7 @@ fun TrainingRecordDraft.toEntity(): TrainingRecordEntity {
     return TrainingRecordEntity(
         dateEpochDay = dateEpochDay,
         type = type,
+        recordedTimeMinutes = recordedTimeMinutes,
         durationMinutes = when (type) {
             TrainingType.BAND_LEG_CURL,
             TrainingType.RESISTED_CYCLING -> durationMinutes

@@ -12,6 +12,7 @@ class TrainingRecordExporterTest {
             TrainingRecordEntity(
                 dateEpochDay = 20_000,
                 type = TrainingType.RESISTED_CYCLING,
+                recordedTimeMinutes = 8 * 60 + 5,
                 durationMinutes = 15,
                 resistanceLevel = 3,
             ),
@@ -21,23 +22,26 @@ class TrainingRecordExporterTest {
 
         assertTrue(summary.contains("總紀錄：1 筆"))
         assertTrue(summary.contains("阻力騎腳踏車"))
+        assertTrue(summary.contains("08:05"))
         assertTrue(summary.contains("15 分鐘"))
     }
 
     @Test
-    fun buildCsvEscapesCommaAndQuoteInNotes() {
+    fun buildTextTableShowsRecordsWithoutAttachment() {
         val records = listOf(
             TrainingRecordEntity(
                 dateEpochDay = 20_000,
                 type = TrainingType.BAND_LEG_CURL,
+                recordedTimeMinutes = 19 * 60 + 45,
                 durationMinutes = 10,
-                notes = "家人說\"慢慢來\",加油",
             ),
         )
 
-        val csv = TrainingRecordExporter.buildCsv(records)
+        val table = TrainingRecordExporter.buildTextTable(records)
 
-        assertTrue(csv.contains("\"家人說\"\"慢慢來\"\",加油\""))
+        assertTrue(table.contains("日期時間"))
+        assertTrue(table.contains("19:45"))
+        assertTrue(table.contains("彈力帶彎腿"))
+        assertTrue(table.contains("10 分鐘"))
     }
 }
-

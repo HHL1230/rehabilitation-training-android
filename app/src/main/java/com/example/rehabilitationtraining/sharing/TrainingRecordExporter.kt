@@ -5,18 +5,26 @@ import com.example.rehabilitationtraining.data.TrainingType
 import com.example.rehabilitationtraining.domain.TrainingStats
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
+import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalTime
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 object TrainingRecordExporter {
     private val dateFormatter = DateTimeFormatter.ofPattern("yyyy/MM/dd")
+    private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
     private val numberFormatter = DecimalFormat("0.##", DecimalFormatSymbols(Locale.US))
 
     fun buildSummary(records: List<TrainingRecordEntity>, title: String = "復健訓練紀錄"): String {
         require(records.isNotEmpty()) { "records must not be empty" }
 
-        val sorted = records.sortedWith(compareBy<TrainingRecordEntity> { it.dateEpochDay }.thenBy { it.createdAtMillis })
+        val sorted = records.sortedWith(
+            compareBy<TrainingRecordEntity> { it.dateEpochDay }
+                .thenBy { it.recordedTimeMinutes ?: fallbackRecordedTimeMinutes(it) }
+                .thenBy { it.createdAtMillis },
+        )
         val fromDate = formatDate(sorted.first().dateEpochDay)
         val toDate = formatDate(sorted.last().dateEpochDay)
         val stats = TrainingStats.fromRecords(records, sorted.last().dateEpochDay)
@@ -36,51 +44,62 @@ object TrainingRecordExporter {
             }
             appendLine()
             appendLine("最近紀錄：")
-            records.sortedByDescending { it.dateEpochDay }.take(10).forEach { record ->
-                appendLine("- ${formatRecord(record)}")
+            appendLine(buildTextTable(records))
+        }.trimEnd()
+    }
+
+    fun buildTextTable(records: List<TrainingRecordEntity>): String {
+        require(records.isNotEmpty()) { "records must not be empty" }
+
+        val rows = records.sortedWith(
+            compareByDescending<TrainingRecordEntity> { it.dateEpochDay }
+                .thenByDescending { it.recordedTimeMinutes ?: fallbackRecordedTimeMinutes(it) }
+                .thenByDescending { it.createdAtMillis },
+        ).take(10).map { record ->
+            listOf(
+                "${formatDate(record.dateEpochDay)} ${formatRecordedTime(record)}",
+                record.type.displayName,
+                formatRecordDetail(record),
+            )
+        }
+
+        return buildString {
+            appendLine("日期時間         | 項目           | 內容")
+            appendLine("---------------|----------------|----------------")
+            rows.forEach { row ->
+                appendLine(
+                    row[0].padEnd(15) +
+                        " | " + row[1].padEnd(14) +
+                        " | " + row[2],
+                )
             }
         }.trimEnd()
     }
 
-    fun buildCsv(records: List<TrainingRecordEntity>): String {
-        val header = listOf("日期", "訓練項目", "時間(分鐘)", "組數", "次數", "重量(公斤)", "阻力等級", "備註")
-        val rows = records
-            .sortedWith(compareBy<TrainingRecordEntity> { it.dateEpochDay }.thenBy { it.createdAtMillis })
-            .map { record ->
-                listOf(
-                    formatDate(record.dateEpochDay),
-                    record.type.displayName,
-                    record.durationMinutes?.toString().orEmpty(),
-                    record.sets?.toString().orEmpty(),
-                    record.reps?.toString().orEmpty(),
-                    record.weightKg?.let { numberFormatter.format(it) }.orEmpty(),
-                    record.resistanceLevel?.toString().orEmpty(),
-                    record.notes.orEmpty(),
-                )
-            }
-
-        return (listOf(header) + rows)
-            .joinToString(separator = "\n") { row ->
-                row.joinToString(separator = ",") { escapeCsv(it) }
-            }
+    fun formatRecord(record: TrainingRecordEntity): String {
+        val detail = formatRecordDetail(record)
+        return "${formatDate(record.dateEpochDay)} ${formatRecordedTime(record)} ${record.type.displayName}：$detail"
     }
 
-    fun formatRecord(record: TrainingRecordEntity): String {
-        val detail = when (record.type) {
+    private fun formatRecordDetail(record: TrainingRecordEntity): String =
+        when (record.type) {
             TrainingType.BAND_LEG_CURL -> "${record.durationMinutes ?: 0} 分鐘"
             TrainingType.LEG_EXTENSION -> "${record.sets ?: 0} 組 x ${record.reps ?: 0} 次，${record.weightKg?.let { numberFormatter.format(it) } ?: 0} 公斤"
             TrainingType.RESISTED_CYCLING -> "${record.durationMinutes ?: 0} 分鐘，阻力 ${record.resistanceLevel ?: 0}"
         }
-        return "${formatDate(record.dateEpochDay)} ${record.type.displayName}：$detail"
-    }
 
     private fun formatDate(epochDay: Long): String =
         LocalDate.ofEpochDay(epochDay).format(dateFormatter)
 
-    private fun escapeCsv(value: String): String {
-        val needsEscaping = value.any { it == ',' || it == '"' || it == '\n' || it == '\r' }
-        if (!needsEscaping) return value
-        return "\"" + value.replace("\"", "\"\"") + "\""
-    }
-}
+    private fun formatRecordedTime(record: TrainingRecordEntity): String =
+        LocalTime.ofSecondOfDay(((record.recordedTimeMinutes ?: fallbackRecordedTimeMinutes(record)) * 60).toLong())
+            .format(timeFormatter)
 
+    private fun fallbackRecordedTimeMinutes(record: TrainingRecordEntity): Int {
+        val time = Instant.ofEpochMilli(record.createdAtMillis)
+            .atZone(ZoneId.systemDefault())
+            .toLocalTime()
+        return time.hour * 60 + time.minute
+    }
+
+}

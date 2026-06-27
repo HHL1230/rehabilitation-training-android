@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import java.time.LocalTime
 
 class TrainingViewModel(
     private val repository: TrainingRepository,
@@ -27,12 +28,16 @@ class TrainingViewModel(
     val uiState: StateFlow<TrainingUiState> = _uiState.asStateFlow()
 
     init {
-        val reminderSettings = reminderSettingsStore.getSettings()
+        val reminderSettingsByType = reminderSettingsStore.getAllSettings()
         _uiState.update {
             it.copy(
-                reminderSettings = reminderSettings,
-                reminderHour = reminderSettings.hour.toString(),
-                reminderMinute = reminderSettings.minute.toString(),
+                reminderSettingsByType = reminderSettingsByType,
+                reminderTimeInputsByType = reminderSettingsByType.mapValues { (_, settings) ->
+                    ReminderTimeInput(
+                        hour = settings.hour.toString(),
+                        minute = settings.minute.toString(),
+                    )
+                },
             )
         }
 
@@ -63,6 +68,14 @@ class TrainingViewModel(
 
     fun updateDurationMinutes(value: String) {
         updateTextField(value) { copy(durationMinutes = it) }
+    }
+
+    fun updateRecordHour(value: String) {
+        updateDigitsField(value.take(2)) { copy(recordHour = it) }
+    }
+
+    fun updateRecordMinute(value: String) {
+        updateDigitsField(value.take(2)) { copy(recordMinute = it) }
     }
 
     fun updateSets(value: String) {
@@ -108,6 +121,8 @@ class TrainingViewModel(
                     weightKg = "",
                     resistanceLevel = "",
                     notes = "",
+                    recordHour = LocalTime.now().hour.toString(),
+                    recordMinute = LocalTime.now().minute.toString(),
                     validationMessages = emptyList(),
                     statusMessage = "已儲存訓練紀錄",
                 )
@@ -115,20 +130,29 @@ class TrainingViewModel(
         }
     }
 
-    fun updateReminderHour(value: String) {
-        updateTextField(value.take(2)) { copy(reminderHour = it) }
+    fun updateReminderHour(type: TrainingType, value: String) {
+        updateReminderInput(type, value.take(2)) { input, updatedValue ->
+            input.copy(hour = updatedValue)
+        }
     }
 
-    fun updateReminderMinute(value: String) {
-        updateTextField(value.take(2)) { copy(reminderMinute = it) }
+    fun updateReminderMinute(type: TrainingType, value: String) {
+        updateReminderInput(type, value.take(2)) { input, updatedValue ->
+            input.copy(minute = updatedValue)
+        }
     }
 
-    fun setReminderEnabled(enabled: Boolean) {
-        saveReminderSettings(enabledOverride = enabled)
+    fun setReminderEnabled(type: TrainingType, enabled: Boolean) {
+        saveReminderSettings(type = type, enabledOverride = enabled)
     }
 
-    fun saveReminderTime() {
-        saveReminderSettings(enabledOverride = null)
+    fun saveReminderTime(type: TrainingType) {
+        saveReminderSettings(type = type, enabledOverride = null)
+    }
+
+    fun recordsFromLast7Days(): List<com.example.rehabilitationtraining.data.TrainingRecordEntity> {
+        val today = LocalDate.now().toEpochDay()
+        return _uiState.value.records.filter { it.dateEpochDay in (today - 6)..today }
     }
 
     fun recordsFromLast30Days(): List<com.example.rehabilitationtraining.data.TrainingRecordEntity> {
@@ -148,17 +172,46 @@ class TrainingViewModel(
                 state
             }
         }
+
     }
 
-    private fun saveReminderSettings(enabledOverride: Boolean?) {
+    private fun updateDigitsField(value: String, update: TrainingUiState.(String) -> TrainingUiState) {
+        _uiState.update { state ->
+            if (value.all { it.isDigit() }) {
+                state.update(value).copy(validationMessages = emptyList())
+            } else {
+                state
+            }
+        }
+    }
+
+    private fun updateReminderInput(
+        type: TrainingType,
+        value: String,
+        update: (ReminderTimeInput, String) -> ReminderTimeInput,
+    ) {
+        if (!value.all { it.isDigit() }) return
+
+        _uiState.update { state ->
+            val currentInput = state.reminderTimeInputsByType[type] ?: ReminderTimeInput()
+            state.copy(
+                reminderTimeInputsByType = state.reminderTimeInputsByType +
+                    (type to update(currentInput, value)),
+                validationMessages = emptyList(),
+            )
+        }
+    }
+
+    private fun saveReminderSettings(type: TrainingType, enabledOverride: Boolean?) {
         val state = _uiState.value
-        val hour = state.reminderHour.toIntOrNull()
-        val minute = state.reminderMinute.toIntOrNull()
+        val input = state.reminderTimeInputsByType[type] ?: ReminderTimeInput()
+        val hour = input.hour.toIntOrNull()
+        val minute = input.minute.toIntOrNull()
 
         if (hour == null || hour !in 0..23 || minute == null || minute !in 0..59) {
             _uiState.update {
                 it.copy(
-                    validationMessages = listOf("提醒時間請輸入有效的 24 小時制時間"),
+                    validationMessages = listOf("${type.displayName}提醒時間請輸入有效的 24 小時制時間"),
                     statusMessage = null,
                 )
             }
@@ -166,23 +219,23 @@ class TrainingViewModel(
         }
 
         val settings = ReminderSettings(
-            enabled = enabledOverride ?: state.reminderSettings.enabled,
+            enabled = enabledOverride ?: (state.reminderSettingsByType[type]?.enabled ?: false),
             hour = hour,
             minute = minute,
         )
-        reminderSettingsStore.save(settings)
-        reminderScheduler.applySettings(settings)
+        reminderSettingsStore.save(type, settings)
+        reminderScheduler.applySettings(type, settings)
 
         _uiState.update {
             it.copy(
-                reminderSettings = settings,
-                reminderHour = settings.hour.toString(),
-                reminderMinute = settings.minute.toString(),
+                reminderSettingsByType = it.reminderSettingsByType + (type to settings),
+                reminderTimeInputsByType = it.reminderTimeInputsByType +
+                    (type to ReminderTimeInput(settings.hour.toString(), settings.minute.toString())),
                 validationMessages = emptyList(),
                 statusMessage = if (settings.enabled) {
-                    "已設定每日 ${settings.formattedTime} 提醒"
+                    "已設定${type.displayName}每日 ${settings.formattedTime} 提醒"
                 } else {
-                    "已關閉每日提醒"
+                    "已關閉${type.displayName}提醒"
                 },
             )
         }
@@ -193,6 +246,7 @@ class TrainingViewModel(
             TrainingType.BAND_LEG_CURL -> TrainingRecordDraft(
                 dateEpochDay = selectedDateEpochDay,
                 type = selectedType,
+                recordedTimeMinutes = recordTimeMinutesOrNull(),
                 durationMinutes = durationMinutes.toIntOrNull(),
                 notes = notes,
             )
@@ -200,6 +254,7 @@ class TrainingViewModel(
             TrainingType.LEG_EXTENSION -> TrainingRecordDraft(
                 dateEpochDay = selectedDateEpochDay,
                 type = selectedType,
+                recordedTimeMinutes = recordTimeMinutesOrNull(),
                 sets = sets.toIntOrNull(),
                 reps = reps.toIntOrNull(),
                 weightKg = weightKg.toDoubleOrNull(),
@@ -209,11 +264,21 @@ class TrainingViewModel(
             TrainingType.RESISTED_CYCLING -> TrainingRecordDraft(
                 dateEpochDay = selectedDateEpochDay,
                 type = selectedType,
+                recordedTimeMinutes = recordTimeMinutesOrNull(),
                 durationMinutes = durationMinutes.toIntOrNull(),
                 resistanceLevel = resistanceLevel.toIntOrNull(),
                 notes = notes,
             )
         }
+
+    private fun TrainingUiState.recordTimeMinutesOrNull(): Int? {
+        val hour = recordHour.toIntOrNull()
+        val minute = recordMinute.toIntOrNull()
+        if (hour == null || hour !in 0..23 || minute == null || minute !in 0..59) {
+            return null
+        }
+        return hour * 60 + minute
+    }
 }
 
 class TrainingViewModelFactory(
@@ -229,4 +294,3 @@ class TrainingViewModelFactory(
         throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
     }
 }
-

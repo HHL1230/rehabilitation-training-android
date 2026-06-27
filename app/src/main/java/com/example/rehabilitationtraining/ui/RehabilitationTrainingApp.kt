@@ -1,6 +1,7 @@
 package com.example.rehabilitationtraining.ui
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -23,6 +24,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LocalTextStyle
@@ -36,24 +38,33 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.Typography
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.rehabilitationtraining.data.TrainingRecordEntity
 import com.example.rehabilitationtraining.data.TrainingType
@@ -73,7 +84,79 @@ private val AppTypography = Typography(
     labelLarge = TextStyle(fontSize = 18.sp, lineHeight = 24.sp, fontWeight = FontWeight.Bold),
 )
 
+private enum class AppThemePalette(
+    val primary: Color,
+    val primaryContainer: Color,
+    val onPrimaryContainer: Color,
+    val secondaryContainer: Color,
+    val surfaceVariant: Color,
+) {
+    OCEAN(
+        primary = Color(0xFF1565C0),
+        primaryContainer = Color(0xFFD7E3FF),
+        onPrimaryContainer = Color(0xFF001B3F),
+        secondaryContainer = Color(0xFFE0E7F5),
+        surfaceVariant = Color(0xFFF1F4FA),
+    ),
+    FOREST(
+        primary = Color(0xFF2E7D32),
+        primaryContainer = Color(0xFFD9F0D3),
+        onPrimaryContainer = Color(0xFF092100),
+        secondaryContainer = Color(0xFFE3EEDB),
+        surfaceVariant = Color(0xFFF2F7EF),
+    ),
+    SUNRISE(
+        primary = Color(0xFFB85C00),
+        primaryContainer = Color(0xFFFFDDBE),
+        onPrimaryContainer = Color(0xFF331A00),
+        secondaryContainer = Color(0xFFF5E4D2),
+        surfaceVariant = Color(0xFFFFF4EA),
+    ),
+    LAVENDER(
+        primary = Color(0xFF6A4FB3),
+        primaryContainer = Color(0xFFE8DDFF),
+        onPrimaryContainer = Color(0xFF21005D),
+        secondaryContainer = Color(0xFFECE5F8),
+        surfaceVariant = Color(0xFFF8F3FF),
+    ),
+    ROSE(
+        primary = Color(0xFF9D4059),
+        primaryContainer = Color(0xFFFFD9E2),
+        onPrimaryContainer = Color(0xFF3F0018),
+        secondaryContainer = Color(0xFFF8E0E6),
+        surfaceVariant = Color(0xFFFFF1F4),
+    );
+
+    fun colorScheme(): ColorScheme = lightColorScheme(
+        primary = primary,
+        onPrimary = Color.White,
+        primaryContainer = primaryContainer,
+        onPrimaryContainer = onPrimaryContainer,
+        secondaryContainer = secondaryContainer,
+        onSecondaryContainer = onPrimaryContainer,
+        surface = Color(0xFFFFFBFF),
+        onSurface = Color(0xFF1C1B1F),
+        surfaceVariant = surfaceVariant,
+        onSurfaceVariant = Color(0xFF1C1B1F),
+        background = Color(0xFFFFFBFF),
+        onBackground = Color(0xFF1C1B1F),
+    )
+}
+
 private val DateFormatter = DateTimeFormatter.ofPattern("yyyy/MM/dd")
+
+private const val THEME_PREFS_NAME = "app_theme_settings"
+private const val THEME_COUNTER_KEY = "theme_counter"
+
+private fun nextThemePaletteIndex(context: Context): Int {
+    val preferences = context.applicationContext.getSharedPreferences(
+        THEME_PREFS_NAME,
+        Context.MODE_PRIVATE,
+    )
+    val nextCounter = preferences.getInt(THEME_COUNTER_KEY, -1) + 1
+    preferences.edit().putInt(THEME_COUNTER_KEY, nextCounter).apply()
+    return nextCounter % AppThemePalette.entries.size
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -81,24 +164,58 @@ fun RehabilitationTrainingApp(viewModelFactory: ViewModelProvider.Factory) {
     val viewModel: TrainingViewModel = viewModel(factory = viewModelFactory)
     val state by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val paletteIndex = remember { mutableStateOf(nextThemePaletteIndex(context)) }
+    val launchPalette = AppThemePalette.entries[paletteIndex.value]
+    var pendingReminderTypeName by rememberSaveable { mutableStateOf<String?>(null) }
+
+    DisposableEffect(lifecycleOwner, context) {
+        var shouldChangeOnResume = lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                if (shouldChangeOnResume) {
+                    paletteIndex.value = nextThemePaletteIndex(context)
+                } else {
+                    shouldChangeOnResume = true
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { granted ->
         if (granted) {
-            viewModel.setReminderEnabled(true)
+            val type = TrainingType.entries.firstOrNull { it.name == pendingReminderTypeName }
+            if (type != null) {
+                viewModel.setReminderEnabled(type, true)
+            }
         } else {
             viewModel.showStatus("需要通知權限才能顯示每日提醒")
         }
+        pendingReminderTypeName = null
     }
 
-    MaterialTheme(typography = AppTypography) {
+    MaterialTheme(
+        colorScheme = launchPalette.colorScheme(),
+        typography = AppTypography,
+    ) {
         Surface(modifier = Modifier.fillMaxSize()) {
             var selectedTab by rememberSaveable { mutableStateOf(0) }
             val tabs = listOf("紀錄", "統計", "提醒", "分享")
 
             Scaffold(
                 topBar = {
-                    TopAppBar(title = { Text("復健訓練") })
+                    TopAppBar(
+                        title = { Text("腿部復健訓練") },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        ),
+                    )
                 },
             ) { padding ->
                 Column(
@@ -106,8 +223,11 @@ fun RehabilitationTrainingApp(viewModelFactory: ViewModelProvider.Factory) {
                         .fillMaxSize()
                         .padding(padding),
                 ) {
-                    SafetyNotice()
-                    TabRow(selectedTabIndex = selectedTab) {
+                    TabRow(
+                        selectedTabIndex = selectedTab,
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.primary,
+                    ) {
                         tabs.forEachIndexed { index, title ->
                             Tab(
                                 selected = selectedTab == index,
@@ -122,7 +242,7 @@ fun RehabilitationTrainingApp(viewModelFactory: ViewModelProvider.Factory) {
                         1 -> DashboardScreen(state)
                         2 -> ReminderScreen(
                             state = state,
-                            onToggleReminder = { enabled ->
+                            onToggleReminder = { type, enabled ->
                                 if (
                                     enabled &&
                                     Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
@@ -131,9 +251,10 @@ fun RehabilitationTrainingApp(viewModelFactory: ViewModelProvider.Factory) {
                                         Manifest.permission.POST_NOTIFICATIONS,
                                     ) != PackageManager.PERMISSION_GRANTED
                                 ) {
+                                    pendingReminderTypeName = type.name
                                     notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                                 } else {
-                                    viewModel.setReminderEnabled(enabled)
+                                    viewModel.setReminderEnabled(type, enabled)
                                 }
                             },
                             onHourChange = viewModel::updateReminderHour,
@@ -145,22 +266,6 @@ fun RehabilitationTrainingApp(viewModelFactory: ViewModelProvider.Factory) {
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun SafetyNotice() {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
-    ) {
-        Text(
-            text = "請依照醫師或物理治療師建議調整訓練量；若疼痛或不適，請停止並詢問專業人員。",
-            modifier = Modifier.padding(16.dp),
-            style = MaterialTheme.typography.bodyMedium,
-        )
     }
 }
 
@@ -221,19 +326,31 @@ private fun DateSelector(
             onClick = { onDateSelected(0) },
             modifier = Modifier.weight(1f).heightIn(min = 52.dp),
         ) {
-            Text("今天")
+            Text(
+                text = "今天",
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center,
+            )
         }
         OutlinedButton(
             onClick = { onDateSelected(-1) },
             modifier = Modifier.weight(1f).heightIn(min = 52.dp),
         ) {
-            Text("昨天")
+            Text(
+                text = "昨天",
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center,
+            )
         }
         OutlinedButton(
             onClick = { onDateSelected(-2) },
             modifier = Modifier.weight(1f).heightIn(min = 52.dp),
         ) {
-            Text("前天")
+            Text(
+                text = "前天",
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center,
+            )
         }
     }
 }
@@ -267,6 +384,26 @@ private fun ExerciseTypeSelector(
 @Composable
 private fun RecordFields(state: TrainingUiState, viewModel: TrainingViewModel) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(
+            text = "紀錄時間：${state.recordHour.padStart(2, '0')}:${state.recordMinute.padStart(2, '0')}",
+            style = MaterialTheme.typography.bodyLarge,
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            NumericField(
+                label = "小時（0-23）",
+                value = state.recordHour,
+                onValueChange = viewModel::updateRecordHour,
+                modifier = Modifier.weight(1f),
+            )
+            NumericField(
+                label = "分鐘（0-59）",
+                value = state.recordMinute,
+                onValueChange = viewModel::updateRecordMinute,
+                modifier = Modifier.weight(1f),
+            )
+        }
+        HorizontalDivider()
+
         when (state.selectedType) {
             TrainingType.BAND_LEG_CURL -> {
                 NumericField(
@@ -394,10 +531,10 @@ private fun DashboardScreen(state: TrainingUiState) {
 @Composable
 private fun ReminderScreen(
     state: TrainingUiState,
-    onToggleReminder: (Boolean) -> Unit,
-    onHourChange: (String) -> Unit,
-    onMinuteChange: (String) -> Unit,
-    onSaveTime: () -> Unit,
+    onToggleReminder: (TrainingType, Boolean) -> Unit,
+    onHourChange: (TrainingType, String) -> Unit,
+    onMinuteChange: (TrainingType, String) -> Unit,
+    onSaveTime: (TrainingType) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -406,53 +543,67 @@ private fun ReminderScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        SectionCard(title = "每日提醒") {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("開啟提醒", style = MaterialTheme.typography.bodyLarge)
-                    Text(
-                        text = "訊息：要做訓練囉，要有耐心，一定會進步，恢復行動自如，加油！",
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                }
-                Switch(
-                    checked = state.reminderSettings.enabled,
-                    onCheckedChange = onToggleReminder,
-                )
-            }
-        }
-
-        SectionCard(title = "提醒時間") {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                NumericField(
-                    label = "小時（0-23）",
-                    value = state.reminderHour,
-                    onValueChange = onHourChange,
-                    modifier = Modifier.weight(1f),
-                )
-                NumericField(
-                    label = "分鐘（0-59）",
-                    value = state.reminderMinute,
-                    onValueChange = onMinuteChange,
-                    modifier = Modifier.weight(1f),
-                )
-            }
-            Spacer(Modifier.height(12.dp))
-            Button(
-                onClick = onSaveTime,
-                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-            ) {
-                Text("儲存提醒時間")
-            }
-            Spacer(Modifier.height(8.dp))
+        SectionCard(title = "每項訓練各自提醒") {
             Text(
-                text = "目前設定：${if (state.reminderSettings.enabled) "每日 ${state.reminderSettings.formattedTime}" else "未開啟"}",
+                text = "可以為彈力帶彎腿、阻力伸腿、阻力騎腳踏車分別開啟提醒與設定時間。",
+                style = MaterialTheme.typography.bodyLarge,
+            )
+            Text(
+                text = "提醒訊息會包含訓練名稱，方便知道現在該做哪一項。",
                 style = MaterialTheme.typography.bodyMedium,
             )
+        }
+
+        TrainingType.entries.forEach { type ->
+            val settings = state.reminderSettingsByType[type] ?: com.example.rehabilitationtraining.reminder.ReminderSettings()
+            val input = state.reminderTimeInputsByType[type] ?: ReminderTimeInput()
+
+            SectionCard(title = "${type.displayName}提醒") {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("開啟${type.displayName}提醒", style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            text = "目前設定：${if (settings.enabled) "每日 ${settings.formattedTime}" else "未開啟"}",
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                    Switch(
+                        checked = settings.enabled,
+                        onCheckedChange = { enabled -> onToggleReminder(type, enabled) },
+                    )
+                }
+                Spacer(Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    NumericField(
+                        label = "小時（0-23）",
+                        value = input.hour,
+                        onValueChange = { value -> onHourChange(type, value) },
+                        modifier = Modifier.weight(1f),
+                    )
+                    NumericField(
+                        label = "分鐘（0-59）",
+                        value = input.minute,
+                        onValueChange = { value -> onMinuteChange(type, value) },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                Spacer(Modifier.height(12.dp))
+                Button(
+                    onClick = { onSaveTime(type) },
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+                ) {
+                    Text("儲存${type.displayName}提醒時間")
+                }
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = "訊息：要做「${type.displayName}」訓練囉，要有耐心，一定會進步，恢復行動自如，加油！",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
         }
 
         StatusMessages(state)
@@ -486,12 +637,20 @@ private fun ShareScreen(state: TrainingUiState, viewModel: TrainingViewModel) {
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         SectionCard(title = "分享給家人或照護者") {
-            Text(
-                text = "App 會產生照護者可讀的摘要文字與 CSV 檔，透過 Android 分享面板傳送。若手機有安裝 LINE，可直接選 LINE 分享。",
-                style = MaterialTheme.typography.bodyLarge,
-            )
-            Spacer(Modifier.height(16.dp))
             Button(
+                onClick = {
+                    share(
+                        records = viewModel.recordsFromLast7Days(),
+                        title = "近 7 天復健訓練紀錄",
+                        emptyMessage = "近 7 天沒有可分享的紀錄",
+                    )
+                },
+                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+            ) {
+                Text("分享近 7 天紀錄")
+            }
+            Spacer(Modifier.height(8.dp))
+            OutlinedButton(
                 onClick = {
                     share(
                         records = viewModel.recordsFromLast30Days(),
@@ -502,19 +661,6 @@ private fun ShareScreen(state: TrainingUiState, viewModel: TrainingViewModel) {
                 modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
             ) {
                 Text("分享近 30 天紀錄")
-            }
-            Spacer(Modifier.height(8.dp))
-            OutlinedButton(
-                onClick = {
-                    share(
-                        records = state.records,
-                        title = "全部復健訓練紀錄",
-                        emptyMessage = "目前沒有可分享的紀錄",
-                    )
-                },
-                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-            ) {
-                Text("分享全部紀錄")
             }
         }
 
