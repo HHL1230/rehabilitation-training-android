@@ -416,17 +416,17 @@ private fun RecordFields(state: TrainingUiState, viewModel: TrainingViewModel) {
 
             TrainingType.LEG_EXTENSION -> {
                 NumericField(
+                    label = "次數",
+                    value = state.reps,
+                    onValueChange = viewModel::updateReps,
+                )
+                NumericField(
                     label = "組數",
                     value = state.sets,
                     onValueChange = viewModel::updateSets,
                 )
                 NumericField(
-                    label = "每組次數",
-                    value = state.reps,
-                    onValueChange = viewModel::updateReps,
-                )
-                NumericField(
-                    label = "重量負荷（公斤）",
+                    label = "阻力（Kg）",
                     value = state.weightKg,
                     onValueChange = viewModel::updateWeightKg,
                     keyboardType = KeyboardType.Decimal,

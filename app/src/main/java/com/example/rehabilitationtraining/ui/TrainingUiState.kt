@@ -20,7 +20,7 @@ data class TrainingUiState(
     val durationMinutes: String = "",
     val sets: String = "",
     val reps: String = "",
-    val weightKg: String = "",
+    val weightKg: String = "2",
     val resistanceLevel: String = "1",
     val distanceKm: String = "",
     val incline: String = "0",

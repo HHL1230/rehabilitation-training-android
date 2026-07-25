@@ -54,7 +54,13 @@ class TrainingViewModel(
     }
 
     fun selectType(type: TrainingType) {
-        _uiState.update { it.copy(selectedType = type, validationMessages = emptyList()) }
+        _uiState.update {
+            it.copy(
+                selectedType = type,
+                weightKg = if (type == TrainingType.LEG_EXTENSION && it.weightKg.isEmpty()) "2" else it.weightKg,
+                validationMessages = emptyList(),
+            )
+        }
     }
 
     fun setSelectedDate(offsetFromToday: Long) {
@@ -126,7 +132,7 @@ class TrainingViewModel(
                     durationMinutes = "",
                     sets = "",
                     reps = "",
-                    weightKg = "",
+                    weightKg = "2",
                     resistanceLevel = "1",
                     distanceKm = "",
                     incline = "0",

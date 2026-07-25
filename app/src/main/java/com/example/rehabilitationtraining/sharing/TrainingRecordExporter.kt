@@ -84,7 +84,7 @@ object TrainingRecordExporter {
     private fun formatRecordDetail(record: TrainingRecordEntity): String =
         when (record.type) {
             TrainingType.BAND_LEG_CURL -> "${record.durationMinutes ?: 0} 分鐘"
-            TrainingType.LEG_EXTENSION -> "${record.sets ?: 0} 組 x ${record.reps ?: 0} 次，${record.weightKg?.let { numberFormatter.format(it) } ?: 0} 公斤"
+            TrainingType.LEG_EXTENSION -> "${record.reps ?: 0} 次，${record.sets ?: 0} 組，${record.weightKg?.let { numberFormatter.format(it) } ?: 0} Kg"
             TrainingType.RESISTED_CYCLING -> "${record.durationMinutes ?: 0} 分鐘，${record.distanceKm?.let { numberFormatter.format(it) } ?: 0} km，LEVEL ${record.resistanceLevel ?: 1}"
             TrainingType.TREADMILL_WALKING -> "${record.durationMinutes ?: 0} 分鐘，${record.distanceKm?.let { numberFormatter.format(it) } ?: 0} km，Incline ${record.incline ?: 0}"
         }

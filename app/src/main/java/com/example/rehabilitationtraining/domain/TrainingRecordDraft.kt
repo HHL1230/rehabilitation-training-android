@@ -30,12 +30,12 @@ fun TrainingRecordDraft.validate(): List<TrainingValidationError> = buildList {
         }
 
         TrainingType.LEG_EXTENSION -> {
-            requirePositive(sets, "請輸入阻力伸腿的組數")
-            requirePositive(reps, "請輸入阻力伸腿的次數")
+            requirePositive(sets, "請輸入彈力帶伸腿的組數")
+            requirePositive(reps, "請輸入彈力帶伸腿的次數")
             if (weightKg == null) {
-                add(TrainingValidationError("請輸入阻力伸腿的重量負荷"))
+                add(TrainingValidationError("請輸入彈力帶伸腿的阻力"))
             } else if (weightKg < 0.0) {
-                add(TrainingValidationError("重量負荷不可小於 0 公斤"))
+                add(TrainingValidationError("阻力不可小於 0 Kg"))
             }
         }
 

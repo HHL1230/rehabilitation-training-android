@@ -47,6 +47,25 @@ class TrainingRecordExporterTest {
     }
 
     @Test
+    fun buildSummaryFormatsBandLegExtensionFieldsInDisplayOrder() {
+        val summary = TrainingRecordExporter.buildSummary(
+            listOf(
+                TrainingRecordEntity(
+                    dateEpochDay = 20_000,
+                    type = TrainingType.LEG_EXTENSION,
+                    recordedTimeMinutes = 9 * 60,
+                    sets = 3,
+                    reps = 12,
+                    weightKg = 2.0,
+                ),
+            ),
+        )
+
+        assertTrue(summary.contains("彈力帶伸腿"))
+        assertTrue(summary.contains("12 次，3 組，2 Kg"))
+    }
+
+    @Test
     fun buildSummaryFormatsTreadmillWalkingDistance() {
         val summary = TrainingRecordExporter.buildSummary(
             listOf(
