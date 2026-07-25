@@ -440,13 +440,13 @@ private fun RecordFields(state: TrainingUiState, viewModel: TrainingViewModel) {
                     onValueChange = viewModel::updateDurationMinutes,
                 )
                 NumericField(
-                    label = "騎乘距離（公里）",
+                    label = "騎乘距離（km）",
                     value = state.distanceKm,
                     onValueChange = viewModel::updateDistanceKm,
                     keyboardType = KeyboardType.Decimal,
                 )
                 NumericField(
-                    label = "阻力等級（1 到 20）",
+                    label = "LEVEL（1 到 20）",
                     value = state.resistanceLevel,
                     onValueChange = viewModel::updateResistanceLevel,
                 )
@@ -459,10 +459,15 @@ private fun RecordFields(state: TrainingUiState, viewModel: TrainingViewModel) {
                     onValueChange = viewModel::updateDurationMinutes,
                 )
                 NumericField(
-                    label = "走路距離（公里）",
+                    label = "走路距離（km）",
                     value = state.distanceKm,
                     onValueChange = viewModel::updateDistanceKm,
                     keyboardType = KeyboardType.Decimal,
+                )
+                NumericField(
+                    label = "Incline",
+                    value = state.incline,
+                    onValueChange = viewModel::updateIncline,
                 )
             }
         }

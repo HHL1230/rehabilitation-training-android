@@ -22,6 +22,7 @@ data class TrainingRecordEntity(
     val weightKg: Double? = null,
     val resistanceLevel: Int? = null,
     val distanceKm: Double? = null,
+    val incline: Int? = null,
     val notes: String? = null,
     val createdAtMillis: Long = System.currentTimeMillis(),
 )

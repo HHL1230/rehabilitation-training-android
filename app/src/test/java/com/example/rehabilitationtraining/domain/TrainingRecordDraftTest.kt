@@ -39,7 +39,7 @@ class TrainingRecordDraftTest {
             resistanceLevel = 21,
         ).validate()
 
-        assertTrue(errors.any { it.message.contains("1 到 20") })
+        assertTrue(errors.any { it.message.contains("LEVEL") })
     }
 
     @Test
@@ -56,16 +56,18 @@ class TrainingRecordDraftTest {
     }
 
     @Test
-    fun treadmillWalkingRequiresPositiveDurationAndDistance() {
+    fun treadmillWalkingRequiresPositiveDistanceAndNonNegativeIncline() {
         val errors = TrainingRecordDraft(
             dateEpochDay = 20_000,
             type = TrainingType.TREADMILL_WALKING,
             recordedTimeMinutes = 9 * 60,
             durationMinutes = 20,
             distanceKm = 0.0,
+            incline = -1,
         ).validate()
 
         assertTrue(errors.any { it.message.contains("走路距離") })
+        assertTrue(errors.any { it.message.contains("Incline") })
     }
 
     @Test
@@ -76,10 +78,12 @@ class TrainingRecordDraftTest {
             recordedTimeMinutes = 9 * 60,
             durationMinutes = 20,
             distanceKm = 1.5,
+            incline = 0,
         ).toEntity()
 
         assertEquals(20, entity.durationMinutes)
         assertEquals(1.5, entity.distanceKm ?: 0.0, 0.0)
+        assertEquals(0, entity.incline)
     }
 
     @Test

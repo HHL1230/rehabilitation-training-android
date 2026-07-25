@@ -10,7 +10,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [TrainingRecordEntity::class],
-    version = 3,
+    version = 4,
     exportSchema = true,
 )
 @TypeConverters(TrainingTypeConverter::class)
@@ -28,7 +28,7 @@ abstract class TrainingDatabase : RoomDatabase() {
                     TrainingDatabase::class.java,
                     "training_records.db",
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                     .build()
                     .also { instance = it }
             }
@@ -42,6 +42,12 @@ abstract class TrainingDatabase : RoomDatabase() {
         private val MIGRATION_2_3 = object : Migration(2, 3) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE training_records ADD COLUMN distanceKm REAL")
+            }
+        }
+
+        private val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE training_records ADD COLUMN incline INTEGER")
             }
         }
     }

@@ -22,9 +22,9 @@ class TrainingRecordExporterTest {
         val summary = TrainingRecordExporter.buildSummary(records)
 
         assertTrue(summary.contains("總紀錄：1 筆"))
-        assertTrue(summary.contains("阻力騎腳踏車"))
+        assertTrue(summary.contains("騎器械腳踏車"))
         assertTrue(summary.contains("08:05"))
-        assertTrue(summary.contains("15 分鐘，1.5 公里，阻力 3"))
+        assertTrue(summary.contains("15 分鐘，1.5 km，LEVEL 3"))
     }
 
     @Test
@@ -56,11 +56,12 @@ class TrainingRecordExporterTest {
                     recordedTimeMinutes = 9 * 60,
                     durationMinutes = 30,
                     distanceKm = 2.5,
+                    incline = 0,
                 ),
             ),
         )
 
         assertTrue(summary.contains("跑步機走路"))
-        assertTrue(summary.contains("30 分鐘，2.5 公里"))
+        assertTrue(summary.contains("30 分鐘，2.5 km，Incline 0"))
     }
 }

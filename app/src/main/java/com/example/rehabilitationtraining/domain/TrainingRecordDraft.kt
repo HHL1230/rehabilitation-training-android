@@ -15,6 +15,7 @@ data class TrainingRecordDraft(
     val weightKg: Double? = null,
     val resistanceLevel: Int? = null,
     val distanceKm: Double? = null,
+    val incline: Int? = null,
     val notes: String? = null,
 )
 
@@ -39,14 +40,14 @@ fun TrainingRecordDraft.validate(): List<TrainingValidationError> = buildList {
         }
 
         TrainingType.RESISTED_CYCLING -> {
-            requirePositive(durationMinutes, "請輸入騎腳踏車的騎乘時間")
+            requirePositive(durationMinutes, "請輸入騎器械腳踏車的騎乘時間")
             if (distanceKm == null || distanceKm <= 0.0) {
                 add(TrainingValidationError("請輸入大於 0 的騎乘距離"))
             }
             if (resistanceLevel == null) {
-                add(TrainingValidationError("請輸入騎腳踏車的阻力等級"))
+                add(TrainingValidationError("請輸入騎器械腳踏車的 LEVEL"))
             } else if (resistanceLevel !in 1..20) {
-                add(TrainingValidationError("阻力等級請輸入 1 到 20"))
+                add(TrainingValidationError("LEVEL 請輸入 1 到 20"))
             }
         }
 
@@ -54,6 +55,9 @@ fun TrainingRecordDraft.validate(): List<TrainingValidationError> = buildList {
             requirePositive(durationMinutes, "請輸入跑步機走路的走路時間")
             if (distanceKm == null || distanceKm <= 0.0) {
                 add(TrainingValidationError("請輸入大於 0 的走路距離"))
+            }
+            if (incline == null || incline < 0) {
+                add(TrainingValidationError("Incline 請輸入 0 以上的整數"))
             }
         }
     }
@@ -91,6 +95,7 @@ fun TrainingRecordDraft.toEntity(): TrainingRecordEntity {
         } else {
             null
         },
+        incline = if (type == TrainingType.TREADMILL_WALKING) incline else null,
         notes = notes?.trim()?.takeIf { it.isNotEmpty() },
     )
 }

@@ -98,6 +98,10 @@ class TrainingViewModel(
         updateTextField(value) { copy(distanceKm = it) }
     }
 
+    fun updateIncline(value: String) {
+        updateDigitsField(value) { copy(incline = it) }
+    }
+
     fun updateNotes(value: String) {
         _uiState.update { it.copy(notes = value.take(200), validationMessages = emptyList()) }
     }
@@ -123,8 +127,9 @@ class TrainingViewModel(
                     sets = "",
                     reps = "",
                     weightKg = "",
-                    resistanceLevel = "",
+                    resistanceLevel = "1",
                     distanceKm = "",
+                    incline = "0",
                     notes = "",
                     recordHour = LocalTime.now().hour.toString(),
                     recordMinute = LocalTime.now().minute.toString(),
@@ -282,6 +287,7 @@ class TrainingViewModel(
                 recordedTimeMinutes = recordTimeMinutesOrNull(),
                 durationMinutes = durationMinutes.toIntOrNull(),
                 distanceKm = distanceKm.toDoubleOrNull(),
+                incline = incline.toIntOrNull(),
                 notes = notes,
             )
         }
