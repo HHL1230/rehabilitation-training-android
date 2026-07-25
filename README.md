@@ -73,6 +73,9 @@ $env:ANDROID_SDK_ROOT = $env:ANDROID_HOME
 adb install -r "app\build\outputs\apk\debug\app-debug.apk"
 ```
 
+Debug APK 會以「腿部復健訓練（開發版）」安裝，套件 ID 為
+`com.example.rehabilitationtraining.debug`；它可與正式發布版並存，且兩者資料互不共用。
+
 ### 2. 啟動應用程式
 ```powershell
 adb shell monkey -p com.example.rehabilitationtraining 1
