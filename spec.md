@@ -9,10 +9,12 @@ App 的目的不是提供醫療診斷或復健處方，而是協助使用者依�
 ## 目前版本
 
 - Version name: `0.1.2`
+- Version code: `3`
 - Android application ID: `com.example.rehabilitationtraining`
 - Minimum SDK: Android 8.0 / API 26
 - Target SDK: Android 15 / API 35
 - 技術棧：Kotlin、Jetpack Compose、Material 3、Room、WorkManager
+- 正式發布：已使用本機 release 簽章金鑰簽署 APK，並透過 GitHub Release 與 GitHub Pages 產品頁提供下載。
 
 ## 已實作功能
 
@@ -84,6 +86,15 @@ App 可透過 Android 系統分享面板分享紀錄。分享內容包含：
 - 每次開啟 App 或從背景回到前景時會輪換一組柔和主題色，保持畫面新鮮感，同時維持高對比與可讀性。
 - 明確提示使用者依照醫師或物理治療師建議調整訓練量。
 
+### 7. 安裝與發布
+
+- 開發版使用套件 ID `com.example.rehabilitationtraining.debug`，可透過 USB／ADB 安裝，並可與正式版並存。
+- 正式版使用套件 ID `com.example.rehabilitationtraining`，由同一組 release 金鑰簽署，確保後續 APK 可直接覆蓋更新。
+- 正式下載入口：
+  - 產品頁：https://hhl1230.github.io/my-products/rehabilitation-training/
+  - GitHub Release：https://github.com/HHL1230/my-products/releases
+- 若從 LINE 開啟連結，應使用「在瀏覽器中開啟」改由 Samsung Internet 或 Chrome 下載 APK；LINE 內建瀏覽器可能封鎖 APK 下載。
+
 ## 已加入測試
 
 目前包含單元測試，涵蓋：
@@ -96,14 +107,14 @@ App 可透過 Android 系統分享面板分享紀錄。分享內容包含：
 可使用以下指令驗證：
 
 ```powershell
-.\gradlew.bat testDebugUnitTest assembleDebug --no-daemon --console=plain
+.\gradlew.bat testDebugUnitTest assembleDebug assembleRelease --no-daemon --console=plain
 ```
 
 ## 目前限制
 
 1. 尚未提供雲端同步或多裝置同步。
 2. 尚未提供照護者帳號或遠端查看功能。
-3. 尚未提供正式 release 簽章流程。
+3. 尚未上架 Google Play，正式 APK 目前透過 GitHub Release 下載與安裝。
 4. 提醒目前以每項訓練每日固定時間為主，尚未支援同一訓練項目一天多次提醒。
 5. App 目前僅作訓練紀錄與提醒，不提供醫療建議。
 
@@ -113,4 +124,4 @@ App 可透過 Android 系統分享面板分享紀錄。分享內容包含：
 2. 加入月報表或 PDF 匯出。
 3. 加入復健目標設定與達成率。
 4. 加入照護者分享模板。
-5. 建立 release 簽章與 Google Play 發布流程。
+5. 建立 Google Play 發布流程。

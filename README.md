@@ -5,6 +5,15 @@
 > [!IMPORTANT]
 > **免責聲明：** 本 App 的目的不是提供醫療診斷或復健處方，僅供規律執行紀錄。請使用者務必遵循醫師或物理治療師之指示進行訓練。
 
+## 📥 正式版下載
+
+- **產品頁：** https://hhl1230.github.io/my-products/rehabilitation-training/
+- **v0.1.2 正式 APK：** https://github.com/HHL1230/my-products/releases/download/rehabilitation-training-v0.1.2/LegRehabilitationTraining-v0.1.2.apk
+
+請以 Samsung Internet 或 Chrome 開啟產品頁下載 APK。LINE 內建瀏覽器可能封鎖 APK
+下載；請使用「在瀏覽器中開啟」或複製連結到外部瀏覽器。首次安裝時，依 Android
+提示允許該瀏覽器或「我的檔案」安裝未知來源 App 即可。
+
 ---
 
 ## 📱 產品定位與高齡友善設計
@@ -58,9 +67,9 @@ $env:ANDROID_SDK_ROOT = $env:ANDROID_HOME
 ```
 
 ### 3. 測試與建置
-在根目錄下執行以下指令以執行單元測試並產生 Debug APK：
+在根目錄下執行以下指令以執行單元測試，並產生 Debug 與已簽署的正式 APK：
 ```powershell
-.\gradlew.bat testDebugUnitTest assembleDebug --no-daemon --console=plain
+.\gradlew.bat testDebugUnitTest assembleDebug assembleRelease --no-daemon --console=plain
 ```
 
 ---
@@ -78,8 +87,21 @@ Debug APK 會以「腿部復健訓練（開發版）」安裝，套件 ID 為
 
 ### 2. 啟動應用程式
 ```powershell
-adb shell monkey -p com.example.rehabilitationtraining 1
+adb shell monkey -p com.example.rehabilitationtraining.debug 1
 ```
+
+正式 APK 使用 `com.example.rehabilitationtraining`，與開發版可並存；兩者資料互不共用。
+
+### 3. 發布正式版
+
+正式 APK 由本機 release 簽章金鑰簽署，並發佈到 GitHub Release。建立新版時：
+
+1. 調整 `versionCode` 與 `versionName`。
+2. 建置 `assembleRelease`。
+3. 將 `app\build\outputs\apk\release\app-release.apk` 上傳為新版 Release 資產。
+4. 同步更新產品頁的版本與下載連結。
+
+請安全備份本機的 `release-key.jks` 與 `keystore.properties`；後續版本必須使用相同簽章金鑰，才能覆蓋安裝既有正式版。
 
 > [!TIP]
 > 如果在模擬器上無法使用電腦鍵盤打字，請至 AVD 設定中確認硬體鍵盤支援已啟用：
