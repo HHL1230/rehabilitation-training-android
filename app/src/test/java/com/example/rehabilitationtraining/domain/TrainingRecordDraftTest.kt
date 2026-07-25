@@ -35,10 +35,51 @@ class TrainingRecordDraftTest {
             type = TrainingType.RESISTED_CYCLING,
             recordedTimeMinutes = 9 * 60,
             durationMinutes = 15,
+            distanceKm = 1.5,
             resistanceLevel = 21,
         ).validate()
 
         assertTrue(errors.any { it.message.contains("1 到 20") })
+    }
+
+    @Test
+    fun cyclingRequiresPositiveDistance() {
+        val errors = TrainingRecordDraft(
+            dateEpochDay = 20_000,
+            type = TrainingType.RESISTED_CYCLING,
+            recordedTimeMinutes = 9 * 60,
+            durationMinutes = 15,
+            resistanceLevel = 3,
+        ).validate()
+
+        assertTrue(errors.any { it.message.contains("騎乘距離") })
+    }
+
+    @Test
+    fun treadmillWalkingRequiresPositiveDurationAndDistance() {
+        val errors = TrainingRecordDraft(
+            dateEpochDay = 20_000,
+            type = TrainingType.TREADMILL_WALKING,
+            recordedTimeMinutes = 9 * 60,
+            durationMinutes = 20,
+            distanceKm = 0.0,
+        ).validate()
+
+        assertTrue(errors.any { it.message.contains("走路距離") })
+    }
+
+    @Test
+    fun treadmillWalkingKeepsDurationAndDistance() {
+        val entity = TrainingRecordDraft(
+            dateEpochDay = 20_000,
+            type = TrainingType.TREADMILL_WALKING,
+            recordedTimeMinutes = 9 * 60,
+            durationMinutes = 20,
+            distanceKm = 1.5,
+        ).toEntity()
+
+        assertEquals(20, entity.durationMinutes)
+        assertEquals(1.5, entity.distanceKm ?: 0.0, 0.0)
     }
 
     @Test

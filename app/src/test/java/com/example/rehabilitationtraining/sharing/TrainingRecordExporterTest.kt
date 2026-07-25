@@ -14,6 +14,7 @@ class TrainingRecordExporterTest {
                 type = TrainingType.RESISTED_CYCLING,
                 recordedTimeMinutes = 8 * 60 + 5,
                 durationMinutes = 15,
+                distanceKm = 1.5,
                 resistanceLevel = 3,
             ),
         )
@@ -23,7 +24,7 @@ class TrainingRecordExporterTest {
         assertTrue(summary.contains("總紀錄：1 筆"))
         assertTrue(summary.contains("阻力騎腳踏車"))
         assertTrue(summary.contains("08:05"))
-        assertTrue(summary.contains("15 分鐘"))
+        assertTrue(summary.contains("15 分鐘，1.5 公里，阻力 3"))
     }
 
     @Test
@@ -43,5 +44,23 @@ class TrainingRecordExporterTest {
         assertTrue(table.contains("19:45"))
         assertTrue(table.contains("彈力帶彎腿"))
         assertTrue(table.contains("10 分鐘"))
+    }
+
+    @Test
+    fun buildSummaryFormatsTreadmillWalkingDistance() {
+        val summary = TrainingRecordExporter.buildSummary(
+            listOf(
+                TrainingRecordEntity(
+                    dateEpochDay = 20_000,
+                    type = TrainingType.TREADMILL_WALKING,
+                    recordedTimeMinutes = 9 * 60,
+                    durationMinutes = 30,
+                    distanceKm = 2.5,
+                ),
+            ),
+        )
+
+        assertTrue(summary.contains("跑步機走路"))
+        assertTrue(summary.contains("30 分鐘，2.5 公里"))
     }
 }

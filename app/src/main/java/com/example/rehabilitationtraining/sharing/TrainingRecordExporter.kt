@@ -85,7 +85,8 @@ object TrainingRecordExporter {
         when (record.type) {
             TrainingType.BAND_LEG_CURL -> "${record.durationMinutes ?: 0} 分鐘"
             TrainingType.LEG_EXTENSION -> "${record.sets ?: 0} 組 x ${record.reps ?: 0} 次，${record.weightKg?.let { numberFormatter.format(it) } ?: 0} 公斤"
-            TrainingType.RESISTED_CYCLING -> "${record.durationMinutes ?: 0} 分鐘，阻力 ${record.resistanceLevel ?: 0}"
+            TrainingType.RESISTED_CYCLING -> "${record.durationMinutes ?: 0} 分鐘，${record.distanceKm?.let { numberFormatter.format(it) } ?: 0} 公里，阻力 ${record.resistanceLevel ?: 0}"
+            TrainingType.TREADMILL_WALKING -> "${record.durationMinutes ?: 0} 分鐘，${record.distanceKm?.let { numberFormatter.format(it) } ?: 0} 公里"
         }
 
     private fun formatDate(epochDay: Long): String =

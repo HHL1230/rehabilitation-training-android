@@ -39,6 +39,7 @@ class ReminderSettingsStore(context: Context) {
                 TrainingType.BAND_LEG_CURL -> ReminderSettings(enabled = false, hour = 9, minute = 0)
                 TrainingType.LEG_EXTENSION -> ReminderSettings(enabled = false, hour = 14, minute = 0)
                 TrainingType.RESISTED_CYCLING -> ReminderSettings(enabled = false, hour = 18, minute = 0)
+                TrainingType.TREADMILL_WALKING -> ReminderSettings(enabled = false, hour = 10, minute = 0)
             }
 
         fun enabledKey(type: TrainingType): String = "enabled_${type.name}"

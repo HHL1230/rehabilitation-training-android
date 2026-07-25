@@ -22,6 +22,7 @@ data class TrainingUiState(
     val reps: String = "",
     val weightKg: String = "",
     val resistanceLevel: String = "",
+    val distanceKm: String = "",
     val notes: String = "",
     val records: List<TrainingRecordEntity> = emptyList(),
     val stats: TrainingStats = TrainingStats.Empty,

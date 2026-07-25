@@ -94,6 +94,10 @@ class TrainingViewModel(
         updateTextField(value) { copy(resistanceLevel = it) }
     }
 
+    fun updateDistanceKm(value: String) {
+        updateTextField(value) { copy(distanceKm = it) }
+    }
+
     fun updateNotes(value: String) {
         _uiState.update { it.copy(notes = value.take(200), validationMessages = emptyList()) }
     }
@@ -120,6 +124,7 @@ class TrainingViewModel(
                     reps = "",
                     weightKg = "",
                     resistanceLevel = "",
+                    distanceKm = "",
                     notes = "",
                     recordHour = LocalTime.now().hour.toString(),
                     recordMinute = LocalTime.now().minute.toString(),
@@ -267,6 +272,16 @@ class TrainingViewModel(
                 recordedTimeMinutes = recordTimeMinutesOrNull(),
                 durationMinutes = durationMinutes.toIntOrNull(),
                 resistanceLevel = resistanceLevel.toIntOrNull(),
+                distanceKm = distanceKm.toDoubleOrNull(),
+                notes = notes,
+            )
+
+            TrainingType.TREADMILL_WALKING -> TrainingRecordDraft(
+                dateEpochDay = selectedDateEpochDay,
+                type = selectedType,
+                recordedTimeMinutes = recordTimeMinutesOrNull(),
+                durationMinutes = durationMinutes.toIntOrNull(),
+                distanceKm = distanceKm.toDoubleOrNull(),
                 notes = notes,
             )
         }

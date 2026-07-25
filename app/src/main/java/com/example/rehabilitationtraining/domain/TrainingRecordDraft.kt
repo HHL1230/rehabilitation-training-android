@@ -14,6 +14,7 @@ data class TrainingRecordDraft(
     val reps: Int? = null,
     val weightKg: Double? = null,
     val resistanceLevel: Int? = null,
+    val distanceKm: Double? = null,
     val notes: String? = null,
 )
 
@@ -38,11 +39,21 @@ fun TrainingRecordDraft.validate(): List<TrainingValidationError> = buildList {
         }
 
         TrainingType.RESISTED_CYCLING -> {
-            requirePositive(durationMinutes, "請輸入騎腳踏車的訓練時間")
+            requirePositive(durationMinutes, "請輸入騎腳踏車的騎乘時間")
+            if (distanceKm == null || distanceKm <= 0.0) {
+                add(TrainingValidationError("請輸入大於 0 的騎乘距離"))
+            }
             if (resistanceLevel == null) {
                 add(TrainingValidationError("請輸入騎腳踏車的阻力等級"))
             } else if (resistanceLevel !in 1..20) {
                 add(TrainingValidationError("阻力等級請輸入 1 到 20"))
+            }
+        }
+
+        TrainingType.TREADMILL_WALKING -> {
+            requirePositive(durationMinutes, "請輸入跑步機走路的走路時間")
+            if (distanceKm == null || distanceKm <= 0.0) {
+                add(TrainingValidationError("請輸入大於 0 的走路距離"))
             }
         }
     }
@@ -64,13 +75,22 @@ fun TrainingRecordDraft.toEntity(): TrainingRecordEntity {
         recordedTimeMinutes = recordedTimeMinutes,
         durationMinutes = when (type) {
             TrainingType.BAND_LEG_CURL,
-            TrainingType.RESISTED_CYCLING -> durationMinutes
+            TrainingType.RESISTED_CYCLING,
+            TrainingType.TREADMILL_WALKING -> durationMinutes
             TrainingType.LEG_EXTENSION -> null
         },
         sets = if (type == TrainingType.LEG_EXTENSION) sets else null,
         reps = if (type == TrainingType.LEG_EXTENSION) reps else null,
         weightKg = if (type == TrainingType.LEG_EXTENSION) weightKg else null,
         resistanceLevel = if (type == TrainingType.RESISTED_CYCLING) resistanceLevel else null,
+        distanceKm = if (
+            type == TrainingType.RESISTED_CYCLING ||
+            type == TrainingType.TREADMILL_WALKING
+        ) {
+            distanceKm
+        } else {
+            null
+        },
         notes = notes?.trim()?.takeIf { it.isNotEmpty() },
     )
 }

@@ -435,14 +435,34 @@ private fun RecordFields(state: TrainingUiState, viewModel: TrainingViewModel) {
 
             TrainingType.RESISTED_CYCLING -> {
                 NumericField(
-                    label = "訓練時間（分鐘）",
+                    label = "騎乘時間（分鐘）",
                     value = state.durationMinutes,
                     onValueChange = viewModel::updateDurationMinutes,
+                )
+                NumericField(
+                    label = "騎乘距離（公里）",
+                    value = state.distanceKm,
+                    onValueChange = viewModel::updateDistanceKm,
+                    keyboardType = KeyboardType.Decimal,
                 )
                 NumericField(
                     label = "阻力等級（1 到 20）",
                     value = state.resistanceLevel,
                     onValueChange = viewModel::updateResistanceLevel,
+                )
+            }
+
+            TrainingType.TREADMILL_WALKING -> {
+                NumericField(
+                    label = "走路時間（分鐘）",
+                    value = state.durationMinutes,
+                    onValueChange = viewModel::updateDurationMinutes,
+                )
+                NumericField(
+                    label = "走路距離（公里）",
+                    value = state.distanceKm,
+                    onValueChange = viewModel::updateDistanceKm,
+                    keyboardType = KeyboardType.Decimal,
                 )
             }
         }
@@ -546,7 +566,7 @@ private fun ReminderScreen(
     ) {
         SectionCard(title = "每項訓練各自提醒") {
             Text(
-                text = "可以為彈力帶彎腿、阻力伸腿、阻力騎腳踏車分別開啟提醒與設定時間。",
+                text = "可以為每一項訓練分別開啟提醒與設定時間。",
                 style = MaterialTheme.typography.bodyLarge,
             )
             Text(
