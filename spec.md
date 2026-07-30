@@ -8,8 +8,8 @@ App 的目的不是提供醫療診斷或復健處方，而是協助使用者依�
 
 ## 目前版本
 
-- Version name: `0.1.2`
-- Version code: `3`
+- Version name: `0.2.0`
+- Version code: `4`
 - Android application ID: `com.example.rehabilitationtraining`
 - Minimum SDK: Android 8.0 / API 26
 - Target SDK: Android 15 / API 35

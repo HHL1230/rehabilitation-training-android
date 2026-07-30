@@ -8,7 +8,7 @@
 ## 📥 正式版下載
 
 - **產品頁：** https://hhl1230.github.io/my-products/rehabilitation-training/
-- **v0.1.2 正式 APK：** https://github.com/HHL1230/my-products/releases/download/rehabilitation-training-v0.1.2/LegRehabilitationTraining-v0.1.2.apk
+- **v0.2.0 正式 APK：** https://github.com/HHL1230/my-products/releases/download/rehabilitation-training-v0.2.0/LegRehabilitationTraining-v0.2.0.apk
 
 請以 Samsung Internet 或 Chrome 開啟產品頁下載 APK。LINE 內建瀏覽器可能封鎖 APK
 下載；請使用「在瀏覽器中開啟」或複製連結到外部瀏覽器。首次安裝時，依 Android
