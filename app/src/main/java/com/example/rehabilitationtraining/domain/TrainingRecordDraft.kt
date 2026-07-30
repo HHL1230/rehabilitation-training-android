@@ -26,7 +26,8 @@ fun TrainingRecordDraft.validate(): List<TrainingValidationError> = buildList {
 
     when (type) {
         TrainingType.BAND_LEG_CURL -> {
-            requirePositive(durationMinutes, "請輸入彈力帶彎腿的訓練時間")
+            requirePositive(reps, "請輸入彈力帶彎腿的次數")
+            requirePositive(sets, "請輸入彈力帶彎腿的組數")
         }
 
         TrainingType.LEG_EXTENSION -> {
@@ -78,13 +79,23 @@ fun TrainingRecordDraft.toEntity(): TrainingRecordEntity {
         type = type,
         recordedTimeMinutes = recordedTimeMinutes,
         durationMinutes = when (type) {
-            TrainingType.BAND_LEG_CURL,
             TrainingType.RESISTED_CYCLING,
             TrainingType.TREADMILL_WALKING -> durationMinutes
+            TrainingType.BAND_LEG_CURL,
             TrainingType.LEG_EXTENSION -> null
         },
-        sets = if (type == TrainingType.LEG_EXTENSION) sets else null,
-        reps = if (type == TrainingType.LEG_EXTENSION) reps else null,
+        sets = when (type) {
+            TrainingType.BAND_LEG_CURL,
+            TrainingType.LEG_EXTENSION -> sets
+            TrainingType.RESISTED_CYCLING,
+            TrainingType.TREADMILL_WALKING -> null
+        },
+        reps = when (type) {
+            TrainingType.BAND_LEG_CURL,
+            TrainingType.LEG_EXTENSION -> reps
+            TrainingType.RESISTED_CYCLING,
+            TrainingType.TREADMILL_WALKING -> null
+        },
         weightKg = if (type == TrainingType.LEG_EXTENSION) weightKg else null,
         resistanceLevel = if (type == TrainingType.RESISTED_CYCLING) resistanceLevel else null,
         distanceKm = if (

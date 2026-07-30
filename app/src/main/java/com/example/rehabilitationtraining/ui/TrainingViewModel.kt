@@ -263,7 +263,8 @@ class TrainingViewModel(
                 dateEpochDay = selectedDateEpochDay,
                 type = selectedType,
                 recordedTimeMinutes = recordTimeMinutesOrNull(),
-                durationMinutes = durationMinutes.toIntOrNull(),
+                reps = reps.toIntOrNull(),
+                sets = sets.toIntOrNull(),
                 notes = notes,
             )
 

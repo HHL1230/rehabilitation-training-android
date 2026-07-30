@@ -68,6 +68,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.rehabilitationtraining.data.TrainingRecordEntity
 import com.example.rehabilitationtraining.data.TrainingType
+import com.example.rehabilitationtraining.domain.summaryText
 import com.example.rehabilitationtraining.sharing.RecordShareManager
 import com.example.rehabilitationtraining.sharing.TrainingRecordExporter
 import kotlinx.coroutines.Dispatchers
@@ -408,9 +409,14 @@ private fun RecordFields(state: TrainingUiState, viewModel: TrainingViewModel) {
         when (state.selectedType) {
             TrainingType.BAND_LEG_CURL -> {
                 NumericField(
-                    label = "訓練時間（分鐘）",
-                    value = state.durationMinutes,
-                    onValueChange = viewModel::updateDurationMinutes,
+                    label = "次數",
+                    value = state.reps,
+                    onValueChange = viewModel::updateReps,
+                )
+                NumericField(
+                    label = "組數",
+                    value = state.sets,
+                    onValueChange = viewModel::updateSets,
                 )
             }
 
@@ -526,6 +532,12 @@ private fun DashboardScreen(state: TrainingUiState) {
             SectionCard(title = "近 7 天") {
                 StatLine("紀錄筆數", "${state.stats.last7RecordCount} 筆")
                 StatLine("總訓練時間", "${state.stats.last7DurationMinutes} 分鐘")
+                if (state.stats.last7Reps > 0) {
+                    StatLine("總訓練次數", "${state.stats.last7Reps} 次")
+                }
+                if (state.stats.last7Sets > 0) {
+                    StatLine("總訓練組數", "${state.stats.last7Sets} 組")
+                }
             }
         }
 
@@ -533,6 +545,12 @@ private fun DashboardScreen(state: TrainingUiState) {
             SectionCard(title = "近 30 天") {
                 StatLine("紀錄筆數", "${state.stats.last30RecordCount} 筆")
                 StatLine("總訓練時間", "${state.stats.last30DurationMinutes} 分鐘")
+                if (state.stats.last30Reps > 0) {
+                    StatLine("總訓練次數", "${state.stats.last30Reps} 次")
+                }
+                if (state.stats.last30Sets > 0) {
+                    StatLine("總訓練組數", "${state.stats.last30Sets} 組")
+                }
             }
         }
 
@@ -540,7 +558,7 @@ private fun DashboardScreen(state: TrainingUiState) {
             SectionCard(title = "各項訓練統計") {
                 TrainingType.entries.forEachIndexed { index, type ->
                     val stats = state.stats.byType.getValue(type)
-                    StatLine(type.displayName, "${stats.recordCount} 筆，${stats.totalDurationMinutes} 分鐘")
+                    StatLine(type.displayName, stats.summaryText())
                     if (index != TrainingType.entries.lastIndex) {
                         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                     }

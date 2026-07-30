@@ -34,7 +34,8 @@ class TrainingRecordExporterTest {
                 dateEpochDay = 20_000,
                 type = TrainingType.BAND_LEG_CURL,
                 recordedTimeMinutes = 19 * 60 + 45,
-                durationMinutes = 10,
+                reps = 10,
+                sets = 3,
             ),
         )
 
@@ -43,6 +44,22 @@ class TrainingRecordExporterTest {
         assertTrue(table.contains("日期時間"))
         assertTrue(table.contains("19:45"))
         assertTrue(table.contains("彈力帶彎腿"))
+        assertTrue(table.contains("10 次，3 組"))
+    }
+
+    @Test
+    fun buildTextTableFallsBackToMinutesForLegacyBandLegCurlRecords() {
+        val records = listOf(
+            TrainingRecordEntity(
+                dateEpochDay = 20_000,
+                type = TrainingType.BAND_LEG_CURL,
+                recordedTimeMinutes = 19 * 60 + 45,
+                durationMinutes = 10,
+            ),
+        )
+
+        val table = TrainingRecordExporter.buildTextTable(records)
+
         assertTrue(table.contains("10 分鐘"))
     }
 
@@ -63,6 +80,27 @@ class TrainingRecordExporterTest {
 
         assertTrue(summary.contains("彈力帶伸腿"))
         assertTrue(summary.contains("12 次，3 組，2 Kg"))
+    }
+
+    @Test
+    fun buildSummaryIncludesRepAndSetTotalsForBandLegCurl() {
+        val summary = TrainingRecordExporter.buildSummary(
+            listOf(
+                TrainingRecordEntity(
+                    dateEpochDay = 20_000,
+                    type = TrainingType.BAND_LEG_CURL,
+                    recordedTimeMinutes = 9 * 60,
+                    reps = 15,
+                    sets = 3,
+                ),
+            ),
+        )
+
+        assertTrue(summary.contains("總訓練次數：15 次"))
+        assertTrue(summary.contains("總訓練組數：3 組"))
+        assertTrue(summary.contains("近 7 天：1 筆，0 分鐘，15 次，3 組"))
+        assertTrue(summary.contains("- 彈力帶彎腿：1 筆，15 次，3 組"))
+        assertTrue(summary.contains("- 彈力帶伸腿：0 筆"))
     }
 
     @Test

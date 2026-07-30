@@ -6,6 +6,8 @@ import com.example.rehabilitationtraining.data.TrainingType
 data class TrainingTypeStats(
     val recordCount: Int = 0,
     val totalDurationMinutes: Int = 0,
+    val totalReps: Int = 0,
+    val totalSets: Int = 0,
 )
 
 data class TrainingStats(
@@ -14,6 +16,10 @@ data class TrainingStats(
     val last30RecordCount: Int,
     val last7DurationMinutes: Int,
     val last30DurationMinutes: Int,
+    val last7Reps: Int,
+    val last30Reps: Int,
+    val last7Sets: Int,
+    val last30Sets: Int,
     val byType: Map<TrainingType, TrainingTypeStats>,
 ) {
     companion object {
@@ -23,6 +29,10 @@ data class TrainingStats(
             last30RecordCount = 0,
             last7DurationMinutes = 0,
             last30DurationMinutes = 0,
+            last7Reps = 0,
+            last30Reps = 0,
+            last7Sets = 0,
+            last30Sets = 0,
             byType = TrainingType.entries.associateWith { TrainingTypeStats() },
         )
 
@@ -38,15 +48,28 @@ data class TrainingStats(
                 last30RecordCount = last30Records.size,
                 last7DurationMinutes = last7Records.sumOf { it.durationMinutes ?: 0 },
                 last30DurationMinutes = last30Records.sumOf { it.durationMinutes ?: 0 },
+                last7Reps = last7Records.sumOf { it.reps ?: 0 },
+                last30Reps = last30Records.sumOf { it.reps ?: 0 },
+                last7Sets = last7Records.sumOf { it.sets ?: 0 },
+                last30Sets = last30Records.sumOf { it.sets ?: 0 },
                 byType = TrainingType.entries.associateWith { type ->
                     val typeRecords = records.filter { it.type == type }
                     TrainingTypeStats(
                         recordCount = typeRecords.size,
                         totalDurationMinutes = typeRecords.sumOf { it.durationMinutes ?: 0 },
+                        totalReps = typeRecords.sumOf { it.reps ?: 0 },
+                        totalSets = typeRecords.sumOf { it.sets ?: 0 },
                     )
                 },
             )
         }
     }
 }
+
+fun TrainingTypeStats.summaryText(): String = buildList {
+    add("$recordCount 筆")
+    if (totalDurationMinutes > 0) add("$totalDurationMinutes 分鐘")
+    if (totalReps > 0) add("$totalReps 次")
+    if (totalSets > 0) add("$totalSets 組")
+}.joinToString(separator = "，")
 

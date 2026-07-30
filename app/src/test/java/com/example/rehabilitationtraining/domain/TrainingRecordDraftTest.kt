@@ -7,14 +7,31 @@ import org.junit.Test
 
 class TrainingRecordDraftTest {
     @Test
-    fun bandLegCurlRequiresDuration() {
+    fun bandLegCurlRequiresRepsAndSets() {
         val errors = TrainingRecordDraft(
             dateEpochDay = 20_000,
             type = TrainingType.BAND_LEG_CURL,
             recordedTimeMinutes = 9 * 60,
         ).validate()
 
-        assertTrue(errors.any { it.message.contains("訓練時間") })
+        assertTrue(errors.any { it.message.contains("彈力帶彎腿的次數") })
+        assertTrue(errors.any { it.message.contains("彈力帶彎腿的組數") })
+    }
+
+    @Test
+    fun bandLegCurlKeepsRepsAndSetsOnly() {
+        val entity = TrainingRecordDraft(
+            dateEpochDay = 20_000,
+            type = TrainingType.BAND_LEG_CURL,
+            recordedTimeMinutes = 9 * 60,
+            durationMinutes = 99,
+            reps = 15,
+            sets = 3,
+        ).toEntity()
+
+        assertEquals(15, entity.reps)
+        assertEquals(3, entity.sets)
+        assertEquals(null, entity.durationMinutes)
     }
 
     @Test
@@ -92,7 +109,8 @@ class TrainingRecordDraftTest {
             dateEpochDay = 20_000,
             type = TrainingType.BAND_LEG_CURL,
             recordedTimeMinutes = 24 * 60,
-            durationMinutes = 10,
+            reps = 10,
+            sets = 3,
         ).validate()
 
         assertTrue(errors.any { it.message.contains("紀錄時間") })
