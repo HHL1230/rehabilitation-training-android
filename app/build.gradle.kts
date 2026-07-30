@@ -9,8 +9,26 @@ plugins {
 
 val keystorePropertiesFile = rootProject.file("keystore.properties")
 val keystoreProperties = Properties().apply {
-    keystorePropertiesFile.inputStream().use(::load)
+    if (keystorePropertiesFile.exists()) {
+        keystorePropertiesFile.inputStream().use(::load)
+    }
 }
+
+fun signingValue(propertyKey: String, environmentKey: String): String? =
+    keystoreProperties.getProperty(propertyKey)?.takeIf(String::isNotBlank)
+        ?: System.getenv(environmentKey)?.takeIf(String::isNotBlank)
+
+val keystoreStoreFile = signingValue("storeFile", "KEYSTORE_FILE")
+val keystoreStorePassword = signingValue("storePassword", "KEYSTORE_PASSWORD")
+val keystoreKeyAlias = signingValue("keyAlias", "KEY_ALIAS")
+val keystoreKeyPassword = signingValue("keyPassword", "KEY_PASSWORD")
+
+val hasReleaseSigning = listOf(
+    keystoreStoreFile,
+    keystoreStorePassword,
+    keystoreKeyAlias,
+    keystoreKeyPassword,
+).all { it != null } && rootProject.file(keystoreStoreFile!!).exists()
 
 android {
     namespace = "com.example.rehabilitationtraining"
@@ -27,11 +45,13 @@ android {
     }
 
     signingConfigs {
-        create("release") {
-            storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
-            storePassword = keystoreProperties.getProperty("storePassword")
-            keyAlias = keystoreProperties.getProperty("keyAlias")
-            keyPassword = keystoreProperties.getProperty("keyPassword")
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = rootProject.file(keystoreStoreFile!!)
+                storePassword = keystoreStorePassword
+                keyAlias = keystoreKeyAlias
+                keyPassword = keystoreKeyPassword
+            }
         }
     }
 
@@ -44,7 +64,14 @@ android {
 
         release {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = if (hasReleaseSigning) {
+                signingConfigs.getByName("release")
+            } else {
+                logger.warn(
+                    "找不到簽章設定（keystore.properties 或 KEYSTORE_* 環境變數），release APK 將不會被簽署。",
+                )
+                null
+            }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",

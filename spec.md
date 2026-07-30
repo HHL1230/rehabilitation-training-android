@@ -14,7 +14,7 @@ App 的目的不是提供醫療診斷或復健處方，而是協助使用者依�
 - Minimum SDK: Android 8.0 / API 26
 - Target SDK: Android 15 / API 35
 - 技術棧：Kotlin、Jetpack Compose、Material 3、Room、WorkManager
-- 正式發布：已使用本機 release 簽章金鑰簽署 APK，並透過 GitHub Release 與 GitHub Pages 產品頁提供下載。
+- 正式發布：使用 release 簽章金鑰簽署 APK，透過 GitHub Actions 建置後，以 GitHub Release 與 GitHub Pages 產品頁提供下載。
 
 ## 已實作功能
 
@@ -94,6 +94,8 @@ App 可透過 Android 系統分享面板分享紀錄。分享內容包含：
   - 產品頁：https://hhl1230.github.io/my-products/rehabilitation-training/
   - GitHub Release：https://github.com/HHL1230/my-products/releases
 - 若從 LINE 開啟連結，應使用「在瀏覽器中開啟」改由 Samsung Internet 或 Chrome 下載 APK；LINE 內建瀏覽器可能封鎖 APK 下載。
+- 正式版建置可由 GitHub Actions（`.github/workflows/release.yml`）執行：推送 `v*` 標籤或手動觸發後，CI 會從 repository secrets 還原簽章金鑰、跑單元測試、產出已簽署 APK 並建立 Release。開發者因此不需在每台電腦保存金鑰檔。
+- 簽章來源優先序為 `keystore.properties` → `KEYSTORE_FILE` / `KEYSTORE_PASSWORD` / `KEY_ALIAS` / `KEY_PASSWORD` 環境變數；兩者皆缺少時 debug 建置仍可運作，release APK 則不簽署。
 
 ## 已加入測試
 
