@@ -106,6 +106,16 @@ adb shell monkey -p com.example.rehabilitationtraining.debug 1
    ```
 3. 也可以到 GitHub 網頁的 **Actions → Build signed release APK → Run workflow** 手動觸發。
    `tag` 欄位填入版本標籤即會發布 Release；留空則只建置並上傳 artifact 供下載檢查。
+
+> [!TIP]
+> Artifact 是未壓縮的原始 APK，從網頁下載即可直接安裝，不需解壓縮。
+> 但因為 APK 本身就是 zip 格式，`gh run download` 會把它當壓縮檔展開成資料夾；
+> 若要用指令列取檔，請改用：
+> ```powershell
+> $id = gh api "repos/<owner>/<repo>/actions/runs/<run-id>/artifacts" --jq ".artifacts[0].id"
+> curl.exe -sL -H "Authorization: Bearer $(gh auth token)" `
+>   "https://api.github.com/repos/<owner>/<repo>/actions/artifacts/$id/zip" -o app.apk
+> ```
 4. 同步更新產品頁的版本與下載連結。
 
 CI 內建兩道保護，任一不符即中止並且不會發布：
