@@ -121,7 +121,9 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v7
         with:
-          name: LegRehabilitationTraining-v${{ steps.meta.outputs.version_name }}
+          # 只上傳單一 APK，關閉壓縮讓下載結果直接就是 .apk 而非需解壓的 zip。
+          # 此模式下 name 會被忽略，artifact 名稱即為檔名。
+          archive: false
           path: LegRehabilitationTraining-v${{ steps.meta.outputs.version_name }}.apk
           if-no-files-found: error
 
