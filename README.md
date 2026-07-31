@@ -108,6 +108,20 @@ adb shell monkey -p com.example.rehabilitationtraining.debug 1
    `tag` 欄位填入版本標籤即會發布 Release；留空則只建置並上傳 artifact 供下載檢查。
 4. 同步更新產品頁的版本與下載連結。
 
+CI 內建兩道保護，任一不符即中止並且不會發布：
+
+* **版號一致性：** 標籤必須是 `v<versionName>`。若推了 `v0.2.1` 卻忘記更新
+  `app/build.gradle.kts`，會在建置前就失敗。加後綴的標籤（例如 `v0.2.0-citest`）
+  視為測試版，會標記成 pre-release 而不會蓋掉正式版的 Latest。
+* **簽章指紋：** 建置後比對 APK 憑證的 SHA-256 是否等於既有正式版
+  （`414eb130…f5dc`，定義在 workflow 的 `EXPECTED_SIGNING_CERT_SHA256`）。
+  這可防止誤用其他金鑰而發出「使用者裝不上去、必須移除舊版才能更新」的 APK。
+
+> [!WARNING]
+> 使用者的訓練紀錄只存在手機本機的 Room 資料庫，沒有雲端備份。一旦簽章金鑰換掉，
+> 使用者必須移除舊版才能安裝新版，所有紀錄會一併消失，務必沿用同一把
+> `release-key.jks`。
+
 CI 使用的簽章資訊儲存在 repository secrets（**Settings → Secrets and variables → Actions**）：
 
 | Secret | 內容 |
@@ -132,7 +146,9 @@ $b64 | gh secret set KEYSTORE_BASE64
 
 1. 調整 `versionCode` 與 `versionName`。
 2. 建置 `assembleRelease`。
-3. 將 `app\build\outputs\apk\release\app-release.apk` 上傳為新版 Release 資產。
+3. 將 `app\build\outputs\apk\release\app-release.apk` 更名為
+   `LegRehabilitationTraining-v<versionName>.apk`（與 CI 及產品頁連結的命名一致），
+   再上傳為新版 Release 資產。
 4. 同步更新產品頁的版本與下載連結。
 
 若電腦上沒有 `keystore.properties`，也可改用環境變數提供簽章資訊：

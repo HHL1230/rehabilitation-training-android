@@ -14,6 +14,11 @@ on:
 permissions:
   contents: write
 
+env:
+  # 既有正式版（v0.1.0 起）的簽章憑證指紋。用錯金鑰時使用者無法覆蓋更新，
+  # 因此在 CI 直接擋下，避免發出安裝不上去的 APK。
+  EXPECTED_SIGNING_CERT_SHA256: "414eb130a525a380661d9b65ff73ebe617359af9db05e6f2533d75dadaddf5dc"
+
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -21,6 +26,40 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+
+      - name: Resolve release metadata
+        id: meta
+        shell: bash
+        run: |
+          VERSION_NAME=$(grep -oP 'versionName\s*=\s*"\K[^"]+' app/build.gradle.kts | head -n 1)
+          if [ -z "$VERSION_NAME" ]; then
+            echo "::error::無法從 app/build.gradle.kts 解析 versionName。"
+            exit 1
+          fi
+          echo "version_name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
+
+          if [ "${{ github.event_name }}" = "push" ]; then
+            TAG="${GITHUB_REF_NAME}"
+          else
+            TAG="${{ inputs.tag }}"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+          # 標籤須與 versionName 一致（v<versionName>），避免發出檔名與版號對不上的 APK。
+          # 允許加上後綴（例如 v0.2.0-citest）作為測試版，會標記為 pre-release。
+          PRERELEASE=false
+          if [ -n "$TAG" ]; then
+            if [ "$TAG" = "v${VERSION_NAME}" ]; then
+              PRERELEASE=false
+            elif [ "${TAG#v${VERSION_NAME}-}" != "$TAG" ]; then
+              echo "偵測到測試標籤 ${TAG}，將標記為 pre-release。"
+              PRERELEASE=true
+            else
+              echo "::error::標籤 ${TAG} 與 versionName ${VERSION_NAME} 不符，請先更新 app/build.gradle.kts 的版號再推標籤。"
+              exit 1
+            fi
+          fi
+          echo "prerelease=$PRERELEASE" >> "$GITHUB_OUTPUT"
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -56,22 +95,23 @@ jobs:
         run: ./gradlew assembleRelease --no-daemon --console=plain
 
       - name: Verify APK signature
+        shell: bash
         run: |
           BUILD_TOOLS_DIR=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)
-          "$BUILD_TOOLS_DIR/apksigner" verify --print-certs app/build/outputs/apk/release/app-release.apk
+          "$BUILD_TOOLS_DIR/apksigner" verify --print-certs \
+            app/build/outputs/apk/release/app-release.apk | tee apksigner-certs.txt
 
-      - name: Resolve release metadata
-        id: meta
-        run: |
-          VERSION_NAME=$(grep -oP 'versionName\s*=\s*"\K[^"]+' app/build.gradle.kts | head -n 1)
-          echo "version_name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
-
-          if [ "${{ github.event_name }}" = "push" ]; then
-            TAG="${GITHUB_REF_NAME}"
-          else
-            TAG="${{ inputs.tag }}"
+          ACTUAL=$(grep -oP 'certificate SHA-256 digest:\s*\K[0-9a-f]+' apksigner-certs.txt | head -n 1)
+          if [ -z "$ACTUAL" ]; then
+            echo "::error::無法從 apksigner 輸出解析簽章指紋。"
+            exit 1
           fi
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          if [ "$ACTUAL" != "$EXPECTED_SIGNING_CERT_SHA256" ]; then
+            echo "::error::簽章金鑰與既有正式版不符，使用者將無法覆蓋更新（需先移除舊版並遺失所有紀錄）。"
+            echo "::error::expected=$EXPECTED_SIGNING_CERT_SHA256 actual=$ACTUAL"
+            exit 1
+          fi
+          echo "簽章指紋與既有正式版相符：$ACTUAL"
 
       - name: Rename APK
         run: |
@@ -91,11 +131,18 @@ jobs:
 
       - name: Publish GitHub Release
         if: steps.meta.outputs.tag != ''
+        shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="${{ steps.meta.outputs.tag }}"
           APK="LegRehabilitationTraining-v${{ steps.meta.outputs.version_name }}.apk"
+
+          if [ "${{ steps.meta.outputs.prerelease }}" = "true" ]; then
+            RELEASE_FLAGS="--prerelease"
+          else
+            RELEASE_FLAGS="--latest"
+          fi
 
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
             gh release upload "$TAG" "$APK" --repo "$GITHUB_REPOSITORY" --clobber
@@ -104,5 +151,5 @@ jobs:
               --repo "$GITHUB_REPOSITORY" \
               --title "腿部復健訓練 ${TAG}" \
               --generate-notes \
-              --latest
+              $RELEASE_FLAGS
           fi
